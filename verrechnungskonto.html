@@ -1,0 +1,615 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verrechnungskonto · MKD</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+  :root{--gruen:#2F5D2F;--gruen-tief:#213F21;--lime:#83B735;--lime-weich:#EAF2DE;--papier:#F5F4EE;--karte:#FFFFFF;--tinte:#232821;--grau:#6C7266;--linie:#E4E3DA;--rot:#B4552F;--rot-weich:#F4E5DD;--schatten:0 1px 2px rgba(33,63,33,.05),0 8px 24px rgba(33,63,33,.06)}
+  *{box-sizing:border-box} html,body{margin:0}
+  body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;background:var(--papier);color:var(--tinte);-webkit-font-smoothing:antialiased;line-height:1.45}
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 20px 80px}
+  header{background:var(--gruen-tief);color:#fff}
+  .head-in{max-width:1160px;margin:0 auto;padding:20px 20px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .brand h1{font-size:15px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin:0}
+  .brand p{margin:3px 0 0;font-size:12.5px;color:#B9C7B1}
+  .add-btn{background:var(--lime);color:var(--gruen-tief);border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:14px;padding:11px 18px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;transition:transform .12s,filter .12s}
+  .add-btn:hover{filter:brightness(1.05)} .add-btn:active{transform:translateY(1px)} .add-btn svg{width:16px;height:16px}
+  .hero{background:var(--gruen);color:#fff} .hero-in{max-width:1160px;margin:0 auto;padding:26px 20px 30px}
+  .hero .kicker{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#B9C7B1;margin:0 0 6px}
+  .hero .big{font-size:clamp(38px,9vw,60px);font-weight:800;line-height:1;margin:0}
+  .hero .sub{margin:12px 0 0;font-size:13.5px;color:#CBD8C2} .hero .sub b{color:#fff;font-weight:600}
+  .cards{display:grid;grid-template-columns:1.7fr 1fr;gap:14px;margin:0 0 26px}
+  .card{background:var(--karte);border:1px solid var(--linie);border-radius:14px;padding:16px 16px 15px;box-shadow:var(--schatten)}
+  .card.primary{padding:20px 20px 18px}
+  .card.primary .amt{font-size:34px}
+  .card.secondary{background:#FAFAF6}
+  .card.secondary .amt{font-size:21px}
+  .card.secondary .who{font-size:12px}
+  .card .who{font-size:12.5px;color:var(--grau);font-weight:600;margin:0 0 8px;display:flex;align-items:center;gap:7px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--lime);flex:none}
+  .card .amt{font-size:26px;font-weight:800;margin:0;letter-spacing:-.01em} .card .amt.neg{color:var(--rot)}
+  .card .note{font-size:11.5px;color:var(--grau);margin:5px 0 0} .card .note.pos{color:var(--gruen)} .card .note.neg{color:var(--rot)} .card.zero .amt{color:var(--grau)}
+  .card .instr{font-size:13px;font-weight:700;margin:8px 0 0} .card .instr.pos{color:var(--gruen)} .card .instr.neg{color:var(--rot)} .card .instr.zero{color:var(--grau)}
+  .card .break{font-size:11.5px;color:var(--grau);margin:4px 0 0}
+  .card-cta{margin-top:13px;display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .settle-btn{background:var(--gruen);color:#fff;border:none;font-family:inherit;font-weight:700;font-size:13px;padding:10px 15px;border-radius:9px;cursor:pointer}
+  .settle-btn:hover{background:var(--gruen-tief)} .settle-btn.rev{background:var(--rot)} .settle-btn.rev:hover{filter:brightness(.92)}
+  .card-cta .cnt{font-size:11.5px;color:var(--grau)}
+  .ablauf{background:var(--lime-weich);border:1px solid #D3E4BE;border-radius:12px;padding:13px 16px;margin:0 0 22px;font-size:12.5px;color:#3B4A33;line-height:1.7}
+  .ablauf b{color:var(--gruen)} .ablauf .leg{color:#6C7266}
+  .ablauf .st{display:inline-block;background:var(--gruen);color:#fff;width:18px;height:18px;border-radius:50%;text-align:center;line-height:18px;font-size:11px;font-weight:700;margin:0 5px 0 0}
+  .ablauf .sep2{margin:0 10px;color:#B7CDA0}
+  .card .vs{color:var(--grau);font-weight:600}
+  .cards-eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--grau);font-weight:700;margin:0 0 10px}
+  .cards-eyebrow b{color:var(--gruen)}
+  .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px}
+  .filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 8px}
+  .fsel{border:1px solid var(--linie);background:#fff;color:var(--tinte);font-family:inherit;font-size:13px;font-weight:600;padding:9px 30px 9px 12px;border-radius:10px;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236C7266' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+  .fsel:focus{outline:none;border-color:var(--lime);box-shadow:0 0 0 3px var(--lime-weich)}
+  .fsel.active{border-color:var(--gruen);color:var(--gruen)}
+  .result-count{font-size:12px;color:var(--grau);margin:0 0 14px 2px;min-height:16px}
+  .tabs{display:inline-flex;background:#ECEBE2;border-radius:10px;padding:3px}
+  .tabs button{border:none;background:none;font-family:inherit;font-weight:600;font-size:13px;color:var(--grau);padding:7px 15px;border-radius:8px;cursor:pointer}
+  .tabs button.on{background:#fff;color:var(--gruen);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+  .search{flex:1;min-width:150px}
+  .search input{width:100%;border:1px solid var(--linie);background:#fff;border-radius:10px;padding:9px 13px;font-family:inherit;font-size:13.5px;color:var(--tinte)}
+  .search input:focus{outline:none;border-color:var(--lime);box-shadow:0 0 0 3px var(--lime-weich)}
+  .ghost{border:1px solid var(--linie);background:#fff;color:var(--gruen);font-family:inherit;font-size:12.5px;font-weight:600;padding:9px 13px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .ghost:hover{background:var(--lime-weich)}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{border:1px solid var(--linie);background:#fff;color:var(--grau);font-family:inherit;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:20px;cursor:pointer}
+  .chip.on{background:var(--gruen);color:#fff;border-color:var(--gruen)}
+  .list{background:var(--karte);border:1px solid var(--linie);border-radius:14px;overflow:hidden;box-shadow:var(--schatten)}
+  .row{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--linie)}
+  .row:last-child{border-bottom:none}
+  .row .d{font-size:12px;color:var(--grau);text-align:center;line-height:1.25}
+  .row .d b{display:block;font-size:16px;color:var(--tinte);font-weight:700}
+  .row .mid .top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .row .lief{font-weight:700;font-size:14.5px} .row .meta{font-size:12px;color:var(--grau);margin-top:2px}
+  .dir{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;white-space:nowrap}
+  .dir.an{background:var(--lime-weich);color:var(--gruen)} .dir.von{background:var(--rot-weich);color:var(--rot)}
+  .split{font-size:11px;color:var(--grau);background:#F0EFE7;padding:2px 7px;border-radius:6px}
+  .right{text-align:right;display:flex;flex-direction:row;align-items:center;gap:12px}
+  .val{font-size:16px;font-weight:800} .val.von{color:var(--rot)}
+  .mini.abr{background:var(--gruen);color:#fff;border-color:var(--gruen)} .mini.abr:hover{background:var(--gruen-tief)}
+  .del2{border:none;background:none;color:#C9C6BB;font-size:13px;cursor:pointer;padding:4px;line-height:1;border-radius:6px}
+  .del2:hover{color:var(--rot);background:var(--rot-weich)}
+  .row.is-done{background:#FBFBF8} .row.is-done .lief,.row.is-done .val{color:#9A9E92}
+  .cnt-line{margin-top:8px}
+  .toasts{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:8px;align-items:center;max-width:92vw}
+  .toast{background:var(--gruen-tief);color:#fff;padding:12px 16px;border-radius:12px;box-shadow:0 10px 34px rgba(0,0,0,.28);font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:14px;transition:opacity .3s;animation:tin .22s ease}
+  .toast svg{width:18px;height:18px;color:var(--lime);flex:none}
+  .toast .undo{background:none;border:none;color:var(--lime);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;text-decoration:underline;padding:0;flex:none}
+  @keyframes tin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .abzug-row{display:grid;grid-template-columns:1fr 120px 36px;gap:8px;margin-bottom:8px}
+  .abzug-row input{width:100%;font-family:inherit;font-size:14px;color:var(--tinte);border:1px solid var(--linie);border-radius:9px;padding:10px 11px;background:#fff}
+  .abzug-row input:focus{outline:none;border-color:var(--lime);box-shadow:0 0 0 3px var(--lime-weich)}
+  .abzug-del{border:1px solid var(--linie);background:#fff;color:#C9C6BB;border-radius:9px;cursor:pointer;font-size:13px}
+  .abzug-del:hover{color:var(--rot);border-color:var(--rot);background:var(--rot-weich)}
+  .add-abzug{border:1px dashed #B7CDA0;background:#fff;color:var(--gruen);font-family:inherit;font-weight:600;font-size:13px;padding:9px 13px;border-radius:9px;cursor:pointer}
+  .add-abzug:hover{border-color:var(--lime);background:var(--lime-weich)}
+  .abzug-sum{color:var(--rot);font-weight:700;font-variant-numeric:tabular-nums}
+  .cf-row.sub{padding:8px 15px 8px 26px;background:#FCFCF9;font-size:12.5px} .cf-row.sub span{color:#8A8F82} .cf-row.sub b{color:var(--grau);font-weight:600}
+  .cf-sheet{max-width:470px}
+  #confirmBody{padding:22px 22px 4px}
+  .cf-lief{font-size:23px;font-weight:800;margin:0;color:var(--tinte);line-height:1.15}
+  .cf-beleg{font-size:14px;color:var(--grau);margin:3px 0 16px;font-weight:600}
+  .cf-amount{display:flex;justify-content:space-between;align-items:baseline;background:var(--lime-weich);border-radius:12px;padding:14px 17px;margin:0 0 16px}
+  .cf-amount span{font-size:13px;color:var(--gruen);font-weight:700} .cf-amount b{font-size:30px;color:var(--gruen);font-weight:800;font-variant-numeric:tabular-nums}
+  .cf-amount.von{background:var(--rot-weich)} .cf-amount.von span{color:var(--rot)} .cf-amount.von b{color:var(--rot)}
+  .cf-grid{border:1px solid var(--linie);border-radius:12px;overflow:hidden}
+  .cf-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:11px 15px;border-bottom:1px solid var(--linie);font-size:14px}
+  .cf-row:last-child{border-bottom:none}
+  .cf-row span{color:var(--grau)} .cf-row b{color:var(--tinte);font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+  .cf-row.big{background:#F5F8EF} .cf-row.big b{color:var(--gruen);font-size:17px}
+  .cf-hint{font-size:12px;color:var(--grau);margin:14px 2px 0;line-height:1.5}
+  .cf-actions{display:flex;gap:10px;padding:18px 22px 22px}
+  .cf-no{flex:1;justify-content:center;font-size:14px;padding:14px}
+  .cf-yes{width:auto;flex:2}
+  .acts{display:flex;gap:6px}
+  .mini{border:1px solid var(--linie);background:#fff;color:var(--gruen);font-family:inherit;font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;cursor:pointer;white-space:nowrap}
+  .mini:hover{background:var(--lime-weich)} .mini.done{color:var(--grau)}
+  .mini.del{color:var(--rot);padding:5px 9px} .mini.del:hover{background:var(--rot-weich)}
+  .badge{font-size:11px;font-weight:700;color:var(--grau)} .badge.ok{color:var(--gruen)}
+  .empty{padding:44px 20px;text-align:center;color:var(--grau)} .empty b{color:var(--tinte);display:block;font-size:15px;margin-bottom:4px}
+  .verlauf{margin-top:26px;background:var(--karte);border:1px solid var(--linie);border-radius:14px;padding:18px 18px 12px;box-shadow:var(--schatten)}
+  .verlauf h3{margin:0 0 2px;font-size:14px;color:var(--gruen)} .verlauf p{margin:0 0 14px;font-size:12px;color:var(--grau)}
+  .chart{display:flex;align-items:flex-end;gap:6px;height:120px}
+  .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%}
+  .col .bars{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}
+  .col .b{width:70%;max-width:26px;background:var(--lime);border-radius:4px 4px 0 0;min-height:2px;transition:height .4s}
+  .col small{font-size:10px;color:var(--grau);white-space:nowrap}
+  .auswert{margin-top:14px}
+  .aus-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:14px}
+  @media(max-width:640px){.aus-grid{grid-template-columns:1fr}}
+  .aus-box{background:var(--karte);border:1px solid var(--linie);border-radius:14px;padding:18px 18px 8px;box-shadow:var(--schatten)}
+  .aus-box h3{margin:0 0 2px;font-size:14px;color:var(--gruen)}
+  .aus-box p{margin:0 0 12px;font-size:12px;color:var(--grau)}
+  table.t{width:100%;border-collapse:collapse;font-size:13px}
+  table.t th{text-align:right;font-size:11px;font-weight:700;color:var(--grau);text-transform:uppercase;letter-spacing:.04em;padding:0 0 8px;border-bottom:1px solid var(--linie)}
+  table.t th:first-child{text-align:left}
+  table.t td{padding:9px 0;border-bottom:1px solid var(--linie);text-align:right;font-variant-numeric:tabular-nums}
+  table.t td:first-child{text-align:left;font-weight:600}
+  table.t tr:last-child td{border-bottom:none}
+  table.t tr.sum td{font-weight:800;color:var(--gruen);border-top:2px solid var(--gruen);border-bottom:none;padding-top:11px}
+  table.t td.von{color:var(--rot)}
+  .liefbar{position:relative}
+  .liefbar i{position:absolute;left:0;top:0;bottom:0;background:var(--lime-weich);border-radius:5px;z-index:0}
+  .liefrow{display:flex;justify-content:space-between;align-items:center;padding:9px 10px;position:relative;z-index:1;font-size:13px}
+  .liefrow span{font-weight:600} .liefrow b{font-variant-numeric:tabular-nums;font-weight:700}
+  .linkbar{background:#FFF6D9;border:1px solid #EAD79A;color:#6B5A1E;border-radius:12px;padding:13px 16px;margin:0 0 18px;font-size:13px;line-height:1.55}
+  .linkbar b{color:#4A3E10} .linkbar .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:#fff;border:1px solid #EAD79A;border-radius:5px;padding:1px 6px}
+  .linkbtn{margin-left:6px;background:var(--gruen);color:#fff;border:none;font-family:inherit;font-weight:700;font-size:12.5px;padding:8px 14px;border-radius:9px;cursor:pointer}
+  .linkbtn:hover{background:var(--gruen-tief)}
+  .sync{font-weight:700} .sync.ok{color:var(--gruen)} .sync.err{color:var(--rot)}
+  .foot{margin-top:22px;font-size:11.5px;color:var(--grau);text-align:center;display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap}
+  .foot a{color:var(--gruen);font-weight:600;cursor:pointer;text-decoration:none} .foot a:hover{text-decoration:underline}
+  .foot .sep{color:var(--linie)}
+  .overlay{position:fixed;inset:0;background:rgba(33,45,33,.4);backdrop-filter:blur(2px);display:none;align-items:flex-end;justify-content:center;z-index:40}
+  .overlay.show{display:flex}
+  .sheet{background:var(--papier);width:100%;max-width:560px;border-radius:18px 18px 0 0;max-height:92vh;overflow:auto;box-shadow:0 -10px 40px rgba(0,0,0,.2)}
+  @media(min-width:600px){.overlay{align-items:center}.sheet{border-radius:18px}}
+  .sheet-head{position:sticky;top:0;background:var(--gruen-tief);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center}
+  .sheet-head h2{margin:0;font-size:15px;font-weight:700;letter-spacing:.02em}
+  .sheet-head button{background:none;border:none;color:#B9C7B1;font-size:24px;cursor:pointer;line-height:1;padding:0}
+  form{padding:18px 20px 22px} .field{margin-bottom:15px}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--grau);margin-bottom:6px}
+  .field input,.field select{width:100%;font-family:inherit;font-size:14.5px;color:var(--tinte);border:1px solid var(--linie);border-radius:10px;padding:11px 12px;background:#fff}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--lime);box-shadow:0 0 0 3px var(--lime-weich)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .seg button{border:1px solid var(--linie);background:#fff;font-family:inherit;font-size:13px;font-weight:600;color:var(--grau);padding:11px;border-radius:10px;cursor:pointer;text-align:left}
+  .seg button b{display:block;font-size:13.5px;color:var(--tinte)}
+  .seg button.on{border-color:var(--gruen);box-shadow:0 0 0 2px var(--lime-weich)} .seg button.on b{color:var(--gruen)}
+  .preview{background:var(--lime-weich);border-radius:10px;padding:13px 14px;margin:4px 0 16px;display:flex;justify-content:space-between;align-items:center}
+  .preview span{font-size:12.5px;color:var(--gruen);font-weight:600} .preview b{font-size:20px;color:var(--gruen);font-weight:800}
+  .save{width:100%;background:var(--gruen);color:#fff;border:none;font-family:inherit;font-weight:700;font-size:15px;padding:14px;border-radius:11px;cursor:pointer} .save:hover{background:var(--gruen-tief)}
+  .hint{font-size:11.5px;color:var(--grau);margin:-8px 0 0}
+  @media(max-width:820px){.cards{grid-template-columns:1fr}}
+  @media(max-width:560px){.cards{grid-template-columns:1fr;gap:11px;margin-top:0}.row{grid-template-columns:52px 1fr;row-gap:10px}.row .right{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center;border-top:1px dashed var(--linie);padding-top:10px}.filters{gap:8px}.filters .tabs{width:100%}.filters .tabs button{flex:1}.fsel{flex:1;min-width:calc(50% - 4px)}.search{flex-basis:100%}.head-in{flex-direction:column;align-items:stretch}.add-btn{justify-content:center}}
+</style>
+
+<header><div class="head-in">
+  <div class="brand"><h1>Verrechnungskonto</h1><p>MKD (Vater) ↔ Landwirtschaft · Ludwig · alle Beträge netto</p></div>
+  <button class="add-btn" onclick="openForm()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Rechnung erfassen</button>
+</div></header>
+
+<section class="hero"><div class="hero-in">
+  <p class="kicker">Offen gesamt an MKD · netto</p>
+  <p class="big num" id="heroBig">–</p>
+  <p class="sub" id="heroSub"></p>
+</div></section>
+
+<div class="wrap">
+  <div class="linkbar" id="linkbar" style="display:none"></div>
+  <p class="cards-eyebrow">Offene Salden gegenüber <b>MKD</b> (Vater)</p>
+  <div class="cards" id="cards"></div>
+  <div class="ablauf">
+    <span class="st">1</span>Offene Posten durchgehen<span class="sep2">›</span><span class="st">2</span>Überweisung über den Saldo machen<span class="sep2">›</span><span class="st">3</span>jeden erledigten Posten <b>abrechnen</b><br>
+    <span class="leg">Zeichen: <b>→ MKD</b> = du schuldest dem MKD &nbsp;·&nbsp; <b style="color:var(--rot)">← MKD</b> = Gutschrift, MKD schuldet dir zurück</span>
+  </div>
+  <div class="filters">
+    <div class="tabs">
+      <button id="tOffen" class="on" onclick="setStatus('offen')">Offen</button>
+      <button id="tErl" onclick="setStatus('erledigt')">Erledigt</button>
+      <button id="tAlle" onclick="setStatus('alle')">Alle</button>
+    </div>
+    <select class="fsel" id="filtWer" onchange="setF('wer',this.value)"></select>
+    <select class="fsel" id="filtJahr" onchange="setF('jahr',this.value)"></select>
+    <select class="fsel" id="filtLief" onchange="setF('lief',this.value)"></select>
+    <select class="fsel" id="filtRicht" onchange="setF('richt',this.value)">
+      <option value="alle">Alle Richtungen</option>
+      <option value="an_mkd">an MKD</option>
+      <option value="von_mkd">von MKD (Gutschrift)</option>
+    </select>
+    <div class="search"><input id="search" type="search" placeholder="Lieferant oder Rechnungsnr. suchen…" oninput="render()"></div>
+    <button class="ghost" id="resetBtn" onclick="resetFilters()" style="display:none">zurücksetzen</button>
+    <button class="ghost" onclick="exportCSV()" title="Als CSV für Excel"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>CSV</button>
+  </div>
+  <p class="result-count" id="resultCount"></p>
+  <div class="list" id="list"></div>
+  <div class="verlauf">
+    <h3>Verrechnet je Monat · netto</h3>
+    <p>Volumen der weiterverrechneten Beträge, letzte 12 Monate.</p>
+    <div class="chart" id="chart"></div>
+  </div>
+
+  <div class="auswert">
+    <div class="aus-grid">
+      <div class="aus-box">
+        <h3>Jahresauswertung · netto</h3>
+        <p>Wie viel pro Jahr weiterverrechnet wurde.</p>
+        <div id="jahrTab"></div>
+      </div>
+      <div class="aus-box">
+        <h3>Nach Lieferant</h3>
+        <p id="liefScope">Verrechnetes Volumen, alle Jahre.</p>
+        <div id="liefTab"></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot"><span id="syncDot" class="sync">–</span><span class="sep">·</span>
+    Daten in der verknüpften OneDrive-Datei. <a onclick="exportJSON()">Sicherung (JSON)</a>
+  </p>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<div class="overlay" id="confirmOverlay" onclick="if(event.target===this)closeConfirm()">
+  <div class="sheet cf-sheet">
+    <div class="sheet-head"><h2>Beleg abrechnen?</h2><button onclick="closeConfirm()">&times;</button></div>
+    <div id="confirmBody"></div>
+    <div class="cf-actions">
+      <button class="ghost cf-no" onclick="closeConfirm()">Nein, zurück</button>
+      <button class="save cf-yes" onclick="doAbrechnen()">Ja, abrechnen</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeForm()">
+  <div class="sheet">
+    <div class="sheet-head"><h2 id="formTitle">Rechnung erfassen</h2><button onclick="closeForm()">&times;</button></div>
+    <form id="form" onsubmit="saveRecord(event)">
+      <input type="hidden" id="fId">
+      <div class="grid2">
+        <div class="field"><label>Datum</label><input type="date" id="fDatum" required></div>
+        <div class="field"><label>Rechnungsnr.</label><input type="text" id="fRg" placeholder="z. B. 3140500335"></div>
+      </div>
+      <div class="field"><label>Lieferant</label><input type="text" id="fLief" list="liefList" placeholder="z. B. Wilhelm Fricke SE" required><datalist id="liefList"></datalist></div>
+      <div class="field"><label>Beteiligter</label><select id="fWer"><option value="Landwirtschaft">Landwirtschaft (du)</option><option value="Ludwig">Ludwig</option></select></div>
+      <div class="field"><label>Richtung</label><div class="seg">
+        <button type="button" id="dAn" class="on" onclick="setDir('an_mkd')"><b>Schuldet MKD</b>Vater hat gezahlt</button>
+        <button type="button" id="dVon" onclick="setDir('von_mkd')"><b>MKD schuldet</b>Gutschrift zurück</button>
+      </div></div>
+      <div class="field"><label>Rechnung netto (€)</label><input type="number" step="0.01" id="fNetto" placeholder="0,00" oninput="calc()" required></div>
+      <div class="field">
+        <label>Abzüge · Eigenanteil Vater (netto) <span id="abzugSum" class="abzug-sum"></span></label>
+        <div id="abzuegeList"></div>
+        <button type="button" class="add-abzug" onclick="addAbzug()">+ Abzug hinzufügen</button>
+        <p class="hint" style="margin-top:8px">Positionen, die dein Vater selbst braucht und die nicht weiterverrechnet werden. Mehrere möglich — die Summe wird abgezogen. Leer lassen, wenn alles weiterverrechnet wird.</p>
+      </div>
+      <div class="preview"><span>verrechnet netto →</span><b class="num" id="fVerrechnet">0,00 €</b></div>
+      <div class="field"><label>Abgerechnet am <span style="font-weight:400">(leer = offen)</span></label><input type="date" id="fAbger"></div>
+      <button type="submit" class="save">Speichern</button>
+    </form>
+  </div>
+</div>
+
+<script>
+const SEED = [{"id": "seed0", "datum": "2024-01-06", "lieferant": "Wilhelm Fricke SE", "rgnr": "3140500335", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 87.1, "eigen": 0, "abger": "2024-01-26"}, {"id": "seed1", "datum": "2024-01-06", "lieferant": "Wilhelm Fricke SE", "rgnr": "3140500330", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 57.51, "eigen": 0, "abger": "2024-01-26"}, {"id": "seed2", "datum": "2024-01-10", "lieferant": "Fliegl Agro Center", "rgnr": "2024701008", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 325.02, "eigen": 110, "abger": "2024-09-10"}, {"id": "seed3", "datum": "2024-01-13", "lieferant": "Wilhelm Fricke SE", "rgnr": "31400550622", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 863.83, "eigen": 0, "abger": "2024-01-26"}, {"id": "seed4", "datum": "2024-01-20", "lieferant": "Wilhelm Fricke SE", "rgnr": "3140613572", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 56.62, "eigen": 0, "abger": "2024-02-21"}, {"id": "seed5", "datum": "2024-02-10", "lieferant": "Wilhelm Fricke SE", "rgnr": "3140845113", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 68.62, "eigen": 0, "abger": "2024-02-21"}, {"id": "seed6", "datum": "2024-02-24", "lieferant": "Wilhelm Fricke SE", "rgnr": "3140996229", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 18.62, "eigen": 0, "abger": "2024-09-10"}, {"id": "seed7", "datum": "2024-03-30", "lieferant": "Wilhelm Fricke SE", "rgnr": "3141407501", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 1402.91, "eigen": 0, "abger": "2024-09-10"}, {"id": "seed8", "datum": "2024-04-03", "lieferant": "Kerbl", "rgnr": "VR-2513562", "beteiligter": "Landwirtschaft", "richtung": "von_mkd", "netto": -594.2, "eigen": 0, "abger": "2024-09-10"}, {"id": "seed9", "datum": "2024-04-06", "lieferant": "Wilhelm Fricke SE", "rgnr": "3141480917", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 239.33, "eigen": 0, "abger": "2024-09-10"}, {"id": "seed10", "datum": "2024-04-13", "lieferant": "Wilhelm Fricke SE", "rgnr": "3141557094", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 332.11, "eigen": 176.73, "abger": "2024-09-10"}, {"id": "seed11", "datum": "2024-04-19", "lieferant": "Wilhelm Fricke SE", "rgnr": "3141632587", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": -146.3, "eigen": 0, "abger": "2024-09-10"}, {"id": "seed12", "datum": "2024-04-20", "lieferant": "Wilhelm Fricke SE", "rgnr": "3141647347", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 111.37, "eigen": 0, "abger": "2024-09-10"}, {"id": "seed13", "datum": "2024-04-27", "lieferant": "Wilhelm Fricke SE", "rgnr": "3141735729", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": -55.43, "eigen": 0, "abger": "2024-09-25"}, {"id": "seed14", "datum": "2024-04-27", "lieferant": "Wilhelm Fricke SE", "rgnr": "3141735745", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 103.26, "eigen": 0, "abger": "2024-09-25"}, {"id": "seed15", "datum": "2024-05-11", "lieferant": "Schaffelhuber", "rgnr": "4981608", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 766.71, "eigen": 0, "abger": "2024-09-10"}, {"id": "seed16", "datum": "2024-05-11", "lieferant": "Wilhelm Fricke SE", "rgnr": "3141897477", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 129.11, "eigen": 0, "abger": "2024-09-25"}, {"id": "seed17", "datum": "2024-05-11", "lieferant": "Wilhelm Fricke SE", "rgnr": "3141897473", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 458.42, "eigen": 0, "abger": "2024-09-25"}, {"id": "seed18", "datum": "2024-05-16", "lieferant": "Schaffelhuber", "rgnr": "4982475", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 4.81, "eigen": 0, "abger": "2024-11-21"}, {"id": "seed19", "datum": "2024-05-30", "lieferant": "Wilhelm Fricke SE", "rgnr": "3142121037", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": -136.31, "eigen": 0, "abger": "2024-09-29"}, {"id": "seed20", "datum": "2024-05-30", "lieferant": "Wilhelm Fricke SE", "rgnr": "3142121037", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 350.49, "eigen": 0, "abger": "2024-09-25"}, {"id": "seed21", "datum": "2024-05-31", "lieferant": "Wilhelm Fricke SE", "rgnr": "3142135738", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 363.23, "eigen": 0, "abger": "2024-09-25"}, {"id": "seed22", "datum": "2024-06-03", "lieferant": "Schaffelhuber", "rgnr": "4986428", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 144.25, "eigen": 0, "abger": "2024-09-10"}, {"id": "seed23", "datum": "2024-06-05", "lieferant": "TMK Kugellager", "rgnr": "64070", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 90, "eigen": 0, "abger": "2024-09-25"}, {"id": "seed24", "datum": "2024-06-08", "lieferant": "Wilhelm Fricke SE", "rgnr": "3142229475", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 385.44, "eigen": 0, "abger": "2024-09-25"}, {"id": "seed25", "datum": "2024-06-08", "lieferant": "Wilhelm Fricke SE", "rgnr": "3142229477", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 206.43, "eigen": 0, "abger": "2024-09-25"}, {"id": "seed26", "datum": "2024-06-08", "lieferant": "Wilhelm Fricke SE", "rgnr": "3142827858", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": -119.69, "eigen": 0, "abger": "2024-09-25"}, {"id": "seed27", "datum": "2024-06-08", "lieferant": "Wilhelm Fricke SE", "rgnr": "3142058512", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 316.17, "eigen": 288.56, "abger": "2024-11-21"}, {"id": "seed28", "datum": "2024-06-15", "lieferant": "Wilhelm Fricke SE", "rgnr": "3142318287", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 184.18, "eigen": 0, "abger": "2024-11-21"}, {"id": "seed29", "datum": "2024-06-22", "lieferant": "Wilhelm Fricke SE", "rgnr": "3142405533", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": -7.82, "eigen": 0, "abger": "2024-11-21"}, {"id": "seed30", "datum": "2024-07-06", "lieferant": "Wilhelm Fricke SE", "rgnr": "3142585980", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 510.74, "eigen": 510.74, "abger": "2024-11-21"}, {"id": "seed31", "datum": "2024-07-08", "lieferant": "Schaffelhuber", "rgnr": "4993222", "beteiligter": "Ludwig", "richtung": "an_mkd", "netto": 120.05, "eigen": 0, "abger": "2024-11-21"}, {"id": "seed32", "datum": "2024-07-24", "lieferant": "Schaffelhuber", "rgnr": "4939616", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 63.7, "eigen": 0, "abger": "2024-11-21"}, {"id": "seed33", "datum": "2024-07-27", "lieferant": "Wilhelm Fricke SE", "rgnr": "3142827876", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 166.34, "eigen": 0, "abger": "2024-11-21"}, {"id": "seed34", "datum": "2024-08-10", "lieferant": "Wilhelm Fricke SE", "rgnr": "3142990576", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 258.15, "eigen": 0, "abger": "2024-11-21"}, {"id": "seed35", "datum": "2024-09-23", "lieferant": "Kerbl", "rgnr": "2650446", "beteiligter": "Landwirtschaft", "richtung": "von_mkd", "netto": 336.24, "eigen": 63.75, "abger": "2025-01-21"}, {"id": "seed36", "datum": "2024-09-28", "lieferant": "Wilhelm Fricke SE", "rgnr": "3143504649", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 243.11, "eigen": 0, "abger": "2025-01-21"}, {"id": "seed37", "datum": "2024-10-19", "lieferant": "Wilhelm Fricke SE", "rgnr": "3143718899", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 1140.5, "eigen": 1064.25, "abger": "2025-01-21"}, {"id": "seed38", "datum": "2024-10-24", "lieferant": "Würth", "rgnr": "6070906637", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 65.54, "eigen": 0, "abger": "2025-01-21"}, {"id": "seed39", "datum": "2024-10-29", "lieferant": "Würth", "rgnr": "6066234511", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 54.46, "eigen": 0, "abger": "2025-01-21"}, {"id": "seed40", "datum": "2024-10-31", "lieferant": "Wilhelm Fricke SE", "rgnr": "3143850285", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 318.37, "eigen": 0, "abger": "2025-01-21"}, {"id": "seed41", "datum": "2024-11-05", "lieferant": "Kerbl", "rgnr": "VR2683637", "beteiligter": "Landwirtschaft", "richtung": "von_mkd", "netto": 439.1, "eigen": 111.5, "abger": "2025-01-21"}, {"id": "seed42", "datum": "2024-11-05", "lieferant": "Schaffelhuber", "rgnr": "5012355", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 8.75, "eigen": 0, "abger": "2025-01-21"}, {"id": "seed43", "datum": "2024-11-09", "lieferant": "Wilhelm Fricke SE", "rgnr": "3143922624", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 112.48, "eigen": 0, "abger": "2025-01-21"}, {"id": "seed44", "datum": "2024-11-15", "lieferant": "Schaffelhuber", "rgnr": "5013788", "beteiligter": "Ludwig", "richtung": "an_mkd", "netto": 8.53, "eigen": 0, "abger": "2025-01-21"}, {"id": "seed45", "datum": "2024-11-16", "lieferant": "Wilhelm Fricke SE", "rgnr": "3143992877", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 186.69, "eigen": 0, "abger": "2025-01-21"}, {"id": "seed46", "datum": "2024-11-19", "lieferant": "Würth", "rgnr": "6071493084", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 75.73, "eigen": 0, "abger": "2025-01-21"}, {"id": "seed47", "datum": "2024-12-11", "lieferant": "Englbrecht Gas", "rgnr": "241706", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 118, "eigen": 36, "abger": "2025-01-21"}, {"id": "seed48", "datum": "2025-01-20", "lieferant": "Kerbl", "rgnr": "VR-2739951", "beteiligter": "Landwirtschaft", "richtung": "von_mkd", "netto": 78.9, "eigen": 37.82, "abger": null}, {"id": "seed49", "datum": "2025-02-01", "lieferant": "Wilhelm Fricke SE", "rgnr": "3144703501", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 128.56, "eigen": 0, "abger": "2026-06-16"}, {"id": "seed50", "datum": "2025-02-06", "lieferant": "Schaffelhuber", "rgnr": "5022691", "beteiligter": "Ludwig", "richtung": "an_mkd", "netto": 102.55, "eigen": 0, "abger": "2026-03-16"}, {"id": "seed51", "datum": "2025-02-15", "lieferant": "Wilhelm Fricke SE", "rgnr": "3144861153", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 297.91, "eigen": 0, "abger": "2026-03-16"}, {"id": "seed52", "datum": "2025-03-29", "lieferant": "Wilhelm Fricke SE", "rgnr": "3145371985", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 124.77, "eigen": 0, "abger": "2026-03-16"}, {"id": "seed53", "datum": "2025-04-05", "lieferant": "Wilhelm Fricke SE", "rgnr": "3145483311", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 72.22, "eigen": 0, "abger": "2026-03-16"}, {"id": "seed54", "datum": "2025-04-12", "lieferant": "Wilhelm Fricke SE", "rgnr": "3145562268", "beteiligter": "Landwirtschaft", "richtung": "von_mkd", "netto": 237.06, "eigen": 0, "abger": null}, {"id": "seed55", "datum": "2025-04-24", "lieferant": "Wilhelm Fricke SE", "rgnr": "3146064006", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 94.29, "eigen": 0, "abger": null}, {"id": "seed56", "datum": "2025-04-30", "lieferant": "Wilhelm Fricke SE", "rgnr": "3145785435", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 199.6, "eigen": 100, "abger": "2026-06-16"}, {"id": "seed57", "datum": "2025-05-10", "lieferant": "Wilhelm Fricke SE", "rgnr": "3145881506", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 48.96, "eigen": 0, "abger": "2026-06-16"}, {"id": "seed58", "datum": "2025-05-26", "lieferant": "Kerbl", "rgnr": "VR2851913", "beteiligter": "Landwirtschaft", "richtung": "von_mkd", "netto": 711.5, "eigen": 258.82, "abger": null}, {"id": "seed59", "datum": "2025-06-07", "lieferant": "Wilhelm Fricke SE", "rgnr": "3146233759", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 264.86, "eigen": 0, "abger": "2026-06-16"}, {"id": "seed60", "datum": "2025-06-13", "lieferant": "Wilhelm Fricke SE", "rgnr": "3146151270", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 103.89, "eigen": 90.39, "abger": null}, {"id": "seed61", "datum": "2025-06-28", "lieferant": "Wilhelm Fricke SE", "rgnr": "3146495971", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 160.83, "eigen": 136.41, "abger": null}, {"id": "seed62", "datum": "2025-07-05", "lieferant": "Wilhelm Fricke SE", "rgnr": "3146533237", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 4.6, "eigen": 0, "abger": null}, {"id": "seed63", "datum": "2025-07-19", "lieferant": "Wilhelm Fricke SE", "rgnr": "3146756624", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 113.62, "eigen": 0, "abger": null}, {"id": "seed64", "datum": "2025-10-29", "lieferant": "Schaffelhuber", "rgnr": "5063817", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 707.25, "eigen": 0, "abger": null}, {"id": "seed65", "datum": "2025-11-06", "lieferant": "Würth", "rgnr": "6080617057", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 33.65, "eigen": 0, "abger": null}, {"id": "seed66", "datum": "2025-11-08", "lieferant": "Wilhelm Fricke SE", "rgnr": "3148038785", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 132.94, "eigen": 0, "abger": null}, {"datum": "2026-01-10", "rgnr": "3148605815", "lieferant": "Wilhelm Fricke SE", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 285.62, "eigen": 0, "abger": null, "id": "r17864397271414843"}, {"datum": "2026-02-21", "rgnr": "3149082734", "lieferant": "Wilhelm Fricke SE", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 82.8, "eigen": 0, "abger": null, "id": "r17864396680073k2o"}, {"datum": "2026-03-14", "rgnr": "3149347583", "lieferant": "Wilhelm Fricke SE", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 14.41, "eigen": 0, "abger": null, "id": "r1786439580931uv47"}, {"datum": "2026-03-21", "rgnr": "3149435638", "lieferant": "Wilhelm Fricke SE", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 282.03, "eigen": 232.5, "abger": null, "id": "r1786439632051hqkq"}, {"datum": "2026-03-28", "rgnr": "3149522523", "lieferant": "Wilhelm Fricke SE", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 156.45, "eigen": 0, "abger": null, "id": "r1786439549463o8kc"}, {"datum": "2026-04-18", "rgnr": "3149770565", "lieferant": "Wilhelm Fricke SE", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 264.8, "eigen": 0, "abger": null, "id": "r17864394958404u6g"}, {"datum": "2026-06-13", "rgnr": "3150467309", "lieferant": "Wilhelm Fricke SE", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 44.97, "eigen": 17.08, "abger": null, "id": "r1786439373729bidm"}, {"datum": "2026-06-20", "rgnr": "3150560429", "lieferant": "Wilhelm Fricke SE", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 109.15, "eigen": 0, "abger": null, "id": "r17864394103486zem"}, {"datum": "2026-06-29", "rgnr": "VR3152649", "lieferant": "Kerbl", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 221.02, "eigen": 77.2, "abger": null, "id": "r17864393242327tvk"}, {"datum": "2026-07-02", "rgnr": "5098013", "lieferant": "Schaffelhuber", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 281.86, "eigen": 0, "abger": null, "id": "r1786439443828uz3d"}, {"datum": "2026-07-04", "rgnr": "3150756368", "lieferant": "Wilhelm Fricke SE", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 796.64, "eigen": 0, "abger": null, "id": "r1786441419965ktrh"}, {"datum": "2026-07-11", "rgnr": "3150817426", "lieferant": "Wilhelm Fricke SE", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 958.18, "eigen": 0, "abger": null, "id": "r1786441372910ziqk"}, {"datum": "2026-07-13", "rgnr": "VR-3162715", "lieferant": "Kerbl", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 482.25, "eigen": 386.96, "abger": null, "id": "r17864391932927xaz"}, {"datum": "2026-07-31", "rgnr": "VR-3179086", "lieferant": "Kerbl", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 756, "eigen": 0, "abger": null, "id": "r1786439031049c6bo"}, {"datum": "2026-07-31", "rgnr": "3151025130", "lieferant": "Wilhelm Fricke SE", "beteiligter": "Landwirtschaft", "richtung": "an_mkd", "netto": 237.37, "eigen": 137.06, "abger": null, "id": "r17864391017029ge6"}];
+const KEY = 'verrechnung:records';
+const PARTNER = ['Landwirtschaft','Ludwig'];
+let records = [], dir = 'an_mkd', pendingId = null;
+const F = { status:'offen', wer:'alle', jahr:'alle', lief:'alle', richt:'alle' };
+const FDEF = { status:'offen', wer:'alle', jahr:'alle', lief:'alle', richt:'alle' };
+
+const eur = n => new Intl.NumberFormat('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)+' €';
+const dec = n => (Math.round(n*100)/100).toFixed(2).replace('.',',');
+const verrechnet = r => Math.max(0,(+r.netto||0)-(+r.eigen||0));
+const signed = r => r.richtung==='von_mkd' ? -verrechnet(r) : verrechnet(r);
+const isOffen = r => !r.abger;
+const parseDE = d => d ? new Date(d+'T00:00:00') : null;
+const fmtDay = d => { const x=parseDE(d); return x ? String(x.getDate()).padStart(2,'0') : ''; };
+const fmtMon = d => { const x=parseDE(d); return x ? x.toLocaleDateString('de-DE',{month:'short'}).replace('.','')+' '+String(x.getFullYear()).slice(2) : ''; };
+// ===== Speicherung: verknüpfte Datei (OneDrive) + Auto-Save =====
+let fileHandle=null, fileState='unlinked';   // 'linked' | 'needsPermission' | 'unlinked'
+const CACHE='verrechnung:cache';
+const IDB_DB='verrechnung-db', IDB_STORE='handles', IDB_KEY='datafile';
+
+function idbOpen(){ return new Promise((res,rej)=>{ const r=indexedDB.open(IDB_DB,1); r.onupgradeneeded=()=>r.result.createObjectStore(IDB_STORE); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function idbSet(k,v){ const db=await idbOpen(); return new Promise((res,rej)=>{ const t=db.transaction(IDB_STORE,'readwrite'); t.objectStore(IDB_STORE).put(v,k); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
+async function idbGet(k){ const db=await idbOpen(); return new Promise((res,rej)=>{ const t=db.transaction(IDB_STORE,'readonly'); const q=t.objectStore(IDB_STORE).get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
+
+async function havePermission(mode){ try{ return (await fileHandle.queryPermission({mode}))==='granted'; }catch(e){ return false; } }
+async function askPermission(mode){ try{ if(await havePermission(mode)) return true; return (await fileHandle.requestPermission({mode}))==='granted'; }catch(e){ return false; } }
+
+async function readFile(){
+  if(!fileHandle) return null;
+  const f=await fileHandle.getFile(); const t=await f.text();
+  if(!t.trim()) return [];
+  try{ return JSON.parse(t); }catch(e){ return null; }
+}
+async function save(){
+  try{ localStorage.setItem(CACHE, JSON.stringify(records)); }catch(e){}
+  if(fileState!=='linked' || !fileHandle) return;
+  try{
+    const w=await fileHandle.createWritable();
+    await w.write(JSON.stringify(records,null,2));
+    await w.close();
+    setSync('ok');
+  }catch(e){ setSync('err'); }
+}
+async function load(){
+  try{ const h=await idbGet(IDB_KEY); if(h) fileHandle=h; }catch(e){}
+  if(fileHandle){
+    if(await havePermission('readwrite')){
+      const d=await readFile();
+      if(Array.isArray(d)){ records=d; fileState='linked'; return; }
+    }
+    fileState='needsPermission';
+  } else fileState='unlinked';
+  try{ const c=localStorage.getItem(CACHE); if(c){ const p=JSON.parse(c); if(Array.isArray(p)) records=p; } }catch(e){}
+  if(!records.length) records=JSON.parse(JSON.stringify(SEED));
+}
+async function linkFile(){
+  if(!window.showOpenFilePicker){ alert('Dein Browser unterstützt das Verknüpfen nicht. Bitte Microsoft Edge oder Google Chrome verwenden.'); return; }
+  try{
+    const [h]=await window.showOpenFilePicker({multiple:false, types:[{description:'Verrechnungskonto-Daten', accept:{'application/json':['.json']}}]});
+    fileHandle=h;
+    if(!(await askPermission('readwrite'))){ alert('Ohne Schreibzugriff kann nicht gespeichert werden.'); return; }
+    await idbSet(IDB_KEY,h);
+    const d=await readFile();
+    if(Array.isArray(d) && d.length){ records=d; }
+    else { if(!records.length) records=JSON.parse(JSON.stringify(SEED)); await save2file(); }
+    fileState='linked'; updateLinkUI(); render();
+    showToast('Datei verknüpft · Änderungen werden ab jetzt automatisch gespeichert.');
+  }catch(e){ /* abgebrochen */ }
+}
+async function save2file(){ try{ const w=await fileHandle.createWritable(); await w.write(JSON.stringify(records,null,2)); await w.close(); setSync('ok'); }catch(e){ setSync('err'); } }
+async function grantPermission(){
+  if(!fileHandle) return;
+  if(await askPermission('readwrite')){
+    const d=await readFile(); if(Array.isArray(d)) records=d;
+    fileState='linked'; updateLinkUI(); render();
+    showToast('Zugriff erlaubt · aktuelle Daten geladen.');
+  } else { alert('Zugriff wurde nicht erteilt.'); }
+}
+function setSync(state){
+  const el=document.getElementById('syncDot'); if(!el) return;
+  if(state==='ok'){ el.textContent='✓ gespeichert'; el.className='sync ok'; }
+  else { el.textContent='⚠ nicht gespeichert'; el.className='sync err'; }
+}
+function updateLinkUI(){
+  const bar=document.getElementById('linkbar'); if(!bar) return;
+  if(fileState==='linked'){ bar.style.display='none'; setSync('ok'); return; }
+  bar.style.display='block';
+  if(fileState==='needsPermission'){
+    bar.innerHTML='<b>Fast fertig:</b> Zugriff auf deine Daten-Datei bestätigen, dann läuft alles automatisch. <button class="linkbtn" onclick="grantPermission()">Zugriff erlauben</button>';
+  } else {
+    bar.innerHTML='<b>Noch nicht verbunden.</b> Verknüpfe einmalig deine Daten-Datei <span class="mono">verrechnungskonto-daten.json</span> im OneDrive-Ordner. <button class="linkbtn" onclick="linkFile()">Daten-Datei verknüpfen</button>';
+  }
+}
+
+function offenSaldo(p){ return records.filter(r=>r.beteiligter===p && isOffen(r)).reduce((s,r)=>s+signed(r),0); }
+function gesamtOffen(){ return records.filter(isOffen).reduce((s,r)=>s+signed(r),0); }
+function letzteAbrechnung(){ const ds=records.map(r=>r.abger).filter(Boolean).sort(); return ds.length ? parseDE(ds[ds.length-1]).toLocaleDateString('de-DE') : '–'; }
+
+function renderHero(){
+  document.getElementById('heroBig').textContent = eur(gesamtOffen());
+  const cnt = records.filter(isOffen).length;
+  document.getElementById('heroSub').innerHTML = '<b>'+cnt+'</b> offene '+(cnt===1?'Position':'Positionen')+' · letzte Abrechnung <b>'+letzteAbrechnung()+'</b>';
+}
+function renderCards(){
+  const labels = {'Landwirtschaft':'Landwirtschaft (du)','Ludwig':'Ludwig'};
+  const kurz = {'Landwirtschaft':'Landwirtschaft','Ludwig':'Ludwig'};
+  document.getElementById('cards').innerHTML = PARTNER.map((p,i)=>{
+    const open = records.filter(r=>r.beteiligter===p && isOffen(r));
+    const an = open.filter(r=>r.richtung==='an_mkd').reduce((s,r)=>s+verrechnet(r),0);
+    const von = open.filter(r=>r.richtung==='von_mkd').reduce((s,r)=>s+verrechnet(r),0);
+    const s=an-von, neg=s<-0.005, zero=Math.abs(s)<0.005;
+    const col = zero?'#C9C9BE':neg?'var(--rot)':'var(--lime)';
+    const instrCls = zero?'zero':neg?'neg':'pos';
+    const instr = zero ? 'ausgeglichen · nichts zu tun'
+      : neg ? '<b>MKD</b> überweist das an die '+kurz[p]
+      : kurz[p]+' überweist das an <b>MKD</b>';
+    let brk='';
+    if(!zero && von>0.005) brk='<p class="break">aus '+open.length+' Posten · '+eur(an)+' an MKD − '+eur(von)+' Gutschriften</p>';
+    else if(!zero) brk='<p class="break">aus '+open.length+(open.length===1?' offenen Posten':' offenen Posten')+'</p>';
+    const cta = zero ? '' :
+      '<p class="break cnt-line">'+open.length+(open.length===1?' offener Posten':' offene Posten')+' · unten einzeln abrechnen</p>';
+    const cls = 'card '+(i===0?'primary':'secondary')+(zero?' zero':'');
+    return '<div class="'+cls+'">'
+      +'<p class="who"><span class="dot" style="background:'+col+'"></span>'+labels[p]+' <span class="vs">↔ MKD</span></p>'
+      +'<p class="amt num '+(neg?'neg':'')+'">'+eur(Math.abs(s))+'</p>'
+      +'<p class="instr '+instrCls+'">'+instr+'</p>'+brk+cta+'</div>';
+  }).join('');
+}
+async function settleToggleNoop(){}
+function renderFilters(){
+  const jahre=[...new Set(records.map(r=>(r.datum||'').slice(0,4)).filter(Boolean))].sort().reverse();
+  const liefs=[...new Set(records.map(r=>r.lieferant).filter(Boolean))].sort();
+  const opt=(v,l,sel)=>'<option value="'+v+'"'+(sel===v?' selected':'')+'>'+l+'</option>';
+  document.getElementById('filtWer').innerHTML =
+    opt('alle','Alle Beteiligten',F.wer)+PARTNER.map(p=>opt(p,p,F.wer)).join('');
+  document.getElementById('filtJahr').innerHTML =
+    opt('alle','Alle Jahre',F.jahr)+jahre.map(y=>opt(y,y,F.jahr)).join('');
+  document.getElementById('filtLief').innerHTML =
+    opt('alle','Alle Lieferanten',F.lief)+liefs.map(l=>opt(l,l,F.lief)).join('');
+  document.getElementById('filtRicht').value = F.richt;
+  // aktive Filter hervorheben
+  document.getElementById('filtWer').classList.toggle('active',F.wer!=='alle');
+  document.getElementById('filtJahr').classList.toggle('active',F.jahr!=='alle');
+  document.getElementById('filtLief').classList.toggle('active',F.lief!=='alle');
+  document.getElementById('filtRicht').classList.toggle('active',F.richt!=='alle');
+  const q=document.getElementById('search').value.trim();
+  const any = F.wer!=='alle'||F.jahr!=='alle'||F.lief!=='alle'||F.richt!=='alle'||q;
+  document.getElementById('resetBtn').style.display = any ? '' : 'none';
+}
+function renderList(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  let rows = records.slice().sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
+  if(F.status==='offen') rows = rows.filter(isOffen);
+  else if(F.status==='erledigt') rows = rows.filter(r=>!isOffen(r));
+  if(F.wer!=='alle') rows = rows.filter(r=>r.beteiligter===F.wer);
+  if(F.jahr!=='alle') rows = rows.filter(r=>(r.datum||'').slice(0,4)===F.jahr);
+  if(F.lief!=='alle') rows = rows.filter(r=>r.lieferant===F.lief);
+  if(F.richt!=='alle') rows = rows.filter(r=>r.richtung===F.richt);
+  if(q) rows = rows.filter(r=>(r.lieferant||'').toLowerCase().includes(q)||(r.rgnr||'').toLowerCase().includes(q));
+
+  // Trefferzähler + Summe der gefilterten verrechneten Beträge
+  const cntEl=document.getElementById('resultCount');
+  if(cntEl){
+    const sum=rows.reduce((s,r)=>s+signed(r),0);
+    cntEl.textContent = rows.length
+      ? rows.length+(rows.length===1?' Rechnung':' Rechnungen')+' · Summe verrechnet '+eur(sum)
+      : '';
+  }
+
+  const el = document.getElementById('list');
+  if(!rows.length){
+    const leer = (F.status==='offen'&&F.wer==='alle'&&F.jahr==='alle'&&F.lief==='alle'&&F.richt==='alle'&&!q)
+      ? 'Alles abgerechnet. Sauber.' : 'Kein Treffer für diese Filter.';
+    el.innerHTML = '<div class="empty"><b>Keine Einträge</b>'+leer+'</div>'; return;
+  }
+  el.innerHTML = rows.map(r=>{
+    const v=verrechnet(r), von=r.richtung==='von_mkd', done=!isOffen(r);
+    const eigenTxt = (+r.eigen>0) ? '<span class="split">Eigenanteil '+eur(+r.eigen)+'</span>' : '';
+    const action = done
+      ? '<span class="badge ok">✓ erledigt '+parseDE(r.abger).toLocaleDateString('de-DE')+'</span><button class="mini" onclick="reopenRow(\''+r.id+'\')">öffnen</button>'
+      : '<button class="mini abr" onclick="abrechnen(\''+r.id+'\')">abrechnen</button>';
+    return '<div class="row'+(done?' is-done':'')+'"><div class="d"><b>'+fmtDay(r.datum)+'</b>'+fmtMon(r.datum)+'</div>'
+      +'<div class="mid"><div class="top"><span class="lief">'+(r.lieferant||'—')+'</span><span class="dir '+(von?'von':'an')+'">'+(von?'← MKD':'→ MKD')+'</span>'+eigenTxt+'</div>'
+      +'<div class="meta">'+r.beteiligter+(r.rgnr?' · Beleg '+r.rgnr:'')+'</div></div>'
+      +'<div class="right"><span class="val num '+(von?'von':'')+'">'+(von?'−':'')+eur(v)+'</span>'
+      +action
+      +'<button class="del2" title="löschen" onclick="del(\''+r.id+'\')">✕</button>'
+      +'</div></div>';
+  }).join('');
+}
+function renderChart(){
+  const now=new Date(), months=[];
+  for(let i=11;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({key:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'), lbl:d.toLocaleDateString('de-DE',{month:'short'}).replace('.','')}); }
+  const sums={}; months.forEach(m=>sums[m.key]=0);
+  records.forEach(r=>{ if(!r.datum)return; const k=r.datum.slice(0,7); if(k in sums) sums[k]+=verrechnet(r); });
+  const max=Math.max(1,...Object.values(sums));
+  document.getElementById('chart').innerHTML = months.map((m,i)=>{
+    const val=sums[m.key], h=Math.round(val/max*100), showLbl=i%2===0||val>0;
+    return '<div class="col" title="'+m.lbl+': '+eur(val)+'"><div class="bars"><div class="b" style="height:'+h+'%;'+(val===0?'background:#E4E3DA':'')+'"></div></div><small>'+(showLbl?m.lbl:'')+'</small></div>';
+  }).join('');
+}
+function refreshLiefList(){
+  const seen=[...new Set(records.map(r=>r.lieferant).filter(Boolean))].sort();
+  document.getElementById('liefList').innerHTML = seen.map(l=>'<option value="'+l+'">').join('');
+}
+function renderAuswertung(){
+  // Jahrestabelle
+  const yrs={};
+  records.forEach(r=>{ const y=(r.datum||'').slice(0,4)||'—'; if(!yrs[y]) yrs[y]={an:0,von:0,net:0,n:0};
+    const v=verrechnet(r); if(r.richtung==='von_mkd') yrs[y].von+=v; else yrs[y].an+=v; yrs[y].net+=signed(r); yrs[y].n++; });
+  const keys=Object.keys(yrs).sort();
+  const tot={an:0,von:0,net:0,n:0}; keys.forEach(y=>{tot.an+=yrs[y].an;tot.von+=yrs[y].von;tot.net+=yrs[y].net;tot.n+=yrs[y].n;});
+  let html='<table class="t"><thead><tr><th>Jahr</th><th>Rechn.</th><th>an MKD</th><th>von MKD</th><th>Netto</th></tr></thead><tbody>';
+  keys.forEach(y=>{ const d=yrs[y];
+    html+='<tr><td>'+y+'</td><td>'+d.n+'</td><td>'+eur(d.an)+'</td><td class="von">'+(d.von?'−'+eur(d.von):eur(0))+'</td><td>'+eur(d.net)+'</td></tr>'; });
+  if(keys.length>1) html+='<tr class="sum"><td>Gesamt</td><td>'+tot.n+'</td><td>'+eur(tot.an)+'</td><td>'+(tot.von?'−'+eur(tot.von):eur(0))+'</td><td>'+eur(tot.net)+'</td></tr>';
+  html+='</tbody></table>';
+  document.getElementById('jahrTab').innerHTML = keys.length ? html : '<p style="color:var(--grau);font-size:13px">Noch keine Daten.</p>';
+
+  // Lieferanten
+  const lf={}; records.forEach(r=>{ const k=r.lieferant||'—'; lf[k]=(lf[k]||0)+verrechnet(r); });
+  const arr=Object.entries(lf).sort((a,b)=>b[1]-a[1]); const max=arr.length?arr[0][1]:1;
+  document.getElementById('liefTab').innerHTML = arr.map(([k,v])=>
+    '<div class="liefbar"><i style="width:'+Math.max(3,Math.round(v/max*100))+'%"></i><div class="liefrow"><span>'+k+'</span><b>'+eur(v)+'</b></div></div>').join('')
+    || '<p style="color:var(--grau);font-size:13px">Noch keine Daten.</p>';
+}
+function render(){ renderHero(); renderCards(); renderFilters(); renderList(); renderChart(); renderAuswertung(); refreshLiefList(); }
+
+function setStatus(s){ F.status=s; ['tOffen','tErl','tAlle'].forEach(id=>document.getElementById(id).classList.remove('on')); document.getElementById(s==='offen'?'tOffen':s==='erledigt'?'tErl':'tAlle').classList.add('on'); renderList(); }
+function setF(key,val){ F[key]=val; renderFilters(); renderList(); }
+function resetFilters(){ Object.assign(F,FDEF); document.getElementById('search').value=''; setStatus('offen'); renderFilters(); renderList(); }
+
+function abrechnen(id){
+  const r=records.find(x=>x.id===id); if(!r||!isOffen(r)) return;
+  pendingId=id;
+  const v=verrechnet(r), von=r.richtung==='von_mkd';
+  const richtungTxt = von ? 'MKD schuldet der '+r.beteiligter+' (Gutschrift)' : r.beteiligter+' schuldet dem MKD';
+  const eigenRow = (+r.eigen>0) ? '<div class="cf-row"><span>Eigenanteil (bleibt beim MKD)</span><b>'+eur(r.eigen)+'</b></div>'
+      + ((r.eigenItems && r.eigenItems.length>1) ? r.eigenItems.map(a=>'<div class="cf-row sub"><span>'+(a.bez||'Abzug')+'</span><b>'+eur(a.betrag)+'</b></div>').join('') : '') : '';
+  document.getElementById('confirmBody').innerHTML =
+     '<p class="cf-lief">'+(r.lieferant||'—')+'</p>'
+    +'<p class="cf-beleg">Beleg '+(r.rgnr||'—')+'</p>'
+    +'<div class="cf-amount '+(von?'von':'')+'"><span>'+(von?'Gutschrift verrechnet':'verrechnet')+'</span><b>'+(von?'−':'')+eur(v)+'</b></div>'
+    +'<div class="cf-grid">'
+    +'<div class="cf-row"><span>Datum</span><b>'+parseDE(r.datum).toLocaleDateString('de-DE')+'</b></div>'
+    +'<div class="cf-row"><span>Beteiligter</span><b>'+r.beteiligter+'</b></div>'
+    +'<div class="cf-row"><span>Richtung</span><b>'+richtungTxt+'</b></div>'
+    +'<div class="cf-row"><span>Rechnung netto</span><b>'+eur(r.netto)+'</b></div>'
+    +eigenRow
+    +'<div class="cf-row big"><span>wird verrechnet</span><b>'+(von?'−':'')+eur(v)+'</b></div>'
+    +'</div>'
+    +'<p class="cf-hint">Nach „Ja" wird der Beleg auf heute ('+new Date().toLocaleDateString('de-DE')+') gebucht und auf die erledigt-Liste gesetzt.</p>';
+  document.getElementById('confirmOverlay').classList.add('show');
+}
+function closeConfirm(){ document.getElementById('confirmOverlay').classList.remove('show'); pendingId=null; }
+async function doAbrechnen(){
+  const r=records.find(x=>x.id===pendingId);
+  document.getElementById('confirmOverlay').classList.remove('show');
+  if(!r||!isOffen(r)){ pendingId=null; return; }
+  r.abger=new Date().toISOString().slice(0,10); pendingId=null;
+  await save(); render();
+  showToast('Beleg '+(r.rgnr||'—')+' ('+(r.lieferant||'')+') ist als erledigt gebucht.', r.id);
+}
+async function reopenRow(id){
+  const r=records.find(x=>x.id===id); if(!r) return;
+  r.abger=null; await save(); render();
+  showToast('Beleg '+(r.rgnr||'—')+' ist wieder offen.');
+}
+function showToast(text, undoId){
+  const wrap=document.getElementById('toasts'); if(!wrap) return;
+  const t=document.createElement('div'); t.className='toast';
+  t.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 6"/></svg><span>'+text+'</span>'+(undoId?'<button class="undo">rückgängig</button>':'');
+  wrap.appendChild(t);
+  if(undoId){ t.querySelector('.undo').onclick=()=>{ t.remove(); reopenRow(undoId); }; }
+  setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 5200);
+}
+async function del(id){ const r=records.find(x=>x.id===id); if(r && confirm('Rechnung '+(r.lieferant||'')+' '+(r.rgnr||'')+' wirklich löschen?')){ records=records.filter(x=>x.id!==id); await save(); render(); } }
+
+function dl(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1500); }
+function exportCSV(){
+  const head=['Datum','Lieferant','Rechnungsnr','Beteiligter','Richtung','Netto','Eigenanteil','Verrechnet netto','Betrag +/- an MKD','Status','Abgerechnet am'];
+  const body=records.slice().sort((a,b)=>(a.datum||'').localeCompare(b.datum||'')).map(r=>[r.datum,r.lieferant,r.rgnr,r.beteiligter,(r.richtung==='von_mkd'?'MKD schuldet':'schuldet MKD'),dec(+r.netto||0),dec(+r.eigen||0),dec(verrechnet(r)),dec(signed(r)),(isOffen(r)?'offen':'erledigt'),(r.abger||'')]);
+  const csv=[head].concat(body).map(row=>row.map(c=>{ c=String(c==null?'':c).replace(/"/g,'""'); return /[";\n]/.test(c)?'"'+c+'"':c; }).join(';')).join('\r\n');
+  dl(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}), 'verrechnungskonto_'+new Date().toISOString().slice(0,10)+'.csv');
+}
+function exportJSON(){ dl(new Blob([JSON.stringify(records,null,2)],{type:'application/json'}), 'verrechnungskonto_sicherung_'+new Date().toISOString().slice(0,10)+'.json'); }
+
+function openForm(rec){
+  document.getElementById('form').reset();
+  document.getElementById('fId').value = rec?rec.id:'';
+  document.getElementById('formTitle').textContent = rec?'Rechnung bearbeiten':'Rechnung erfassen';
+  document.getElementById('fDatum').value = rec?rec.datum : new Date().toISOString().slice(0,10);
+  if(rec){
+    document.getElementById('fRg').value=rec.rgnr||''; document.getElementById('fLief').value=rec.lieferant||'';
+    document.getElementById('fWer').value=rec.beteiligter; document.getElementById('fNetto').value=rec.netto;
+    document.getElementById('fAbger').value=rec.abger||'';
+    abzuege = (rec.eigenItems && rec.eigenItems.length) ? rec.eigenItems.map(x=>({bez:x.bez||'',betrag:x.betrag}))
+              : (rec.eigen>0 ? [{bez:'',betrag:rec.eigen}] : []);
+    setDir(rec.richtung);
+  } else { abzuege=[]; setDir('an_mkd'); }
+  renderAbzuege();
+  calc(); document.getElementById('overlay').classList.add('show');
+}
+function closeForm(){ document.getElementById('overlay').classList.remove('show'); }
+function setDir(d){ dir=d; document.getElementById('dAn').classList.toggle('on',d==='an_mkd'); document.getElementById('dVon').classList.toggle('on',d==='von_mkd'); }
+let abzuege = [];
+function renderAbzuege(){
+  const el=document.getElementById('abzuegeList');
+  el.innerHTML = abzuege.map((a,i)=>
+    '<div class="abzug-row">'
+    +'<input type="text" class="abzug-bez" placeholder="Bezeichnung (optional)" value="'+String(a.bez||'').replace(/"/g,'&quot;')+'" oninput="updateAbzug('+i+',\'bez\',this.value)">'
+    +'<input type="number" step="0.01" class="abzug-betrag" placeholder="0,00" value="'+((a.betrag!==''&&a.betrag!=null)?a.betrag:'')+'" oninput="updateAbzug('+i+',\'betrag\',this.value)">'
+    +'<button type="button" class="abzug-del" title="entfernen" onclick="removeAbzug('+i+')">✕</button>'
+    +'</div>').join('');
+  updateAbzugSum();
+}
+function addAbzug(){ abzuege.push({bez:'',betrag:''}); renderAbzuege();
+  const rows=document.querySelectorAll('#abzuegeList .abzug-bez'); if(rows.length) rows[rows.length-1].focus(); }
+function removeAbzug(i){ abzuege.splice(i,1); renderAbzuege(); calc(); }
+function updateAbzug(i,k,v){ if(abzuege[i]){ abzuege[i][k]=v; calc(); updateAbzugSum(); } }
+function abzugSumme(){ return abzuege.reduce((s,a)=>s+(+a.betrag||0),0); }
+function updateAbzugSum(){ const el=document.getElementById('abzugSum'); if(el){ const s=abzugSumme(); el.textContent = s>0 ? '– '+eur(s) : ''; } }
+function calc(){ const b=+document.getElementById('fNetto').value||0; document.getElementById('fVerrechnet').textContent=eur(Math.max(0,b-abzugSumme())); }
+async function saveRecord(ev){
+  ev.preventDefault();
+  const id=document.getElementById('fId').value;
+  const items = abzuege.filter(a=>(+a.betrag||0)>0).map(a=>({bez:(a.bez||'').trim(), betrag:+a.betrag||0}));
+  const eigenTotal = items.reduce((s,a)=>s+a.betrag,0);
+  const data={ datum:document.getElementById('fDatum').value, rgnr:document.getElementById('fRg').value.trim(), lieferant:document.getElementById('fLief').value.trim(), beteiligter:document.getElementById('fWer').value, richtung:dir, netto:+document.getElementById('fNetto').value||0, eigen:eigenTotal, eigenItems:(items.length?items:null), abger:document.getElementById('fAbger').value||null };
+  if(id){ Object.assign(records.find(r=>r.id===id), data); }
+  else { data.id='r'+Date.now()+Math.random().toString(36).slice(2,6); records.push(data); }
+  await save(); closeForm(); render();
+}
+
+(async()=>{ await load(); render(); updateLinkUI(); })();
+</script>
