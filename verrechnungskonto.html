@@ -292,83 +292,119 @@ const isOffen = r => !r.abger;
 const parseDE = d => d ? new Date(d+'T00:00:00') : null;
 const fmtDay = d => { const x=parseDE(d); return x ? String(x.getDate()).padStart(2,'0') : ''; };
 const fmtMon = d => { const x=parseDE(d); return x ? x.toLocaleDateString('de-DE',{month:'short'}).replace('.','')+' '+String(x.getFullYear()).slice(2) : ''; };
-// ===== Speicherung: verknüpfte Datei (OneDrive) + Auto-Save =====
-let fileHandle=null, fileState='unlinked';   // 'linked' | 'needsPermission' | 'unlinked'
-const CACHE='verrechnung:cache';
+// ===== OneDrive-Datendatei: beim Start neu lesen, bei Änderung sicher speichern =====
+let fileHandle=null, fileState='unlinked';
+const CACHE='verrechnung:cache'; // Nur als lokale Notfall-Anzeige, niemals still zurückschreiben.
 const IDB_DB='verrechnung-db', IDB_STORE='handles', IDB_KEY='datafile';
+let loadedSignature=null;
+let saving=false;
 
 function idbOpen(){ return new Promise((res,rej)=>{ const r=indexedDB.open(IDB_DB,1); r.onupgradeneeded=()=>r.result.createObjectStore(IDB_STORE); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
 async function idbSet(k,v){ const db=await idbOpen(); return new Promise((res,rej)=>{ const t=db.transaction(IDB_STORE,'readwrite'); t.objectStore(IDB_STORE).put(v,k); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
 async function idbGet(k){ const db=await idbOpen(); return new Promise((res,rej)=>{ const t=db.transaction(IDB_STORE,'readonly'); const q=t.objectStore(IDB_STORE).get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
+async function havePermission(mode){ try{ return !!fileHandle && (await fileHandle.queryPermission({mode}))==='granted'; }catch(e){ return false; } }
+async function askPermission(mode){ try{ if(await havePermission(mode))return true; return !!fileHandle && (await fileHandle.requestPermission({mode}))==='granted'; }catch(e){ return false; } }
 
-async function havePermission(mode){ try{ return (await fileHandle.queryPermission({mode}))==='granted'; }catch(e){ return false; } }
-async function askPermission(mode){ try{ if(await havePermission(mode)) return true; return (await fileHandle.requestPermission({mode}))==='granted'; }catch(e){ return false; } }
-
-async function readFile(){
-  if(!fileHandle) return null;
-  const f=await fileHandle.getFile(); const t=await f.text();
-  if(!t.trim()) return [];
-  try{ return JSON.parse(t); }catch(e){ return null; }
+async function readFileSnapshot(){
+  if(!fileHandle) throw new Error('Keine Datei verknüpft.');
+  const f=await fileHandle.getFile();
+  const raw=await f.text();
+  if(!raw.trim()) throw new Error('Die JSON-Datei ist leer.');
+  let data;
+  try{ data=JSON.parse(raw); }catch(e){ throw new Error('Ungültige JSON-Datei: '+e.message); }
+  if(!Array.isArray(data)) throw new Error('Die JSON-Datei muss eine Liste von Buchungen enthalten.');
+  // Exakter Inhalt, nicht nur Zeitstempel: erkennt Änderungen auch bei gleicher Dateigröße.
+  return {data,signature:raw};
 }
-async function save(){
-  try{ localStorage.setItem(CACHE, JSON.stringify(records)); }catch(e){}
-  if(fileState!=='linked' || !fileHandle) return;
-  try{
-    const w=await fileHandle.createWritable();
-    await w.write(JSON.stringify(records,null,2));
-    await w.close();
-    setSync('ok');
-  }catch(e){ setSync('err'); }
+function setSync(state, detail=''){
+  const el=document.getElementById('syncDot'); if(!el)return;
+  const labels={ok:'✓ OneDrive-Datei gespeichert',loaded:'✓ OneDrive-Datei geladen',busy:'Speichert …',err:'⚠ Nicht gespeichert',offline:'⚠ Nur lokale Anzeige'};
+  el.textContent=labels[state]||state;
+  el.className='sync '+(['ok','loaded'].includes(state)?'ok':'err');
+  el.title=detail;
+}
+function backupCache(){ try{localStorage.setItem(CACHE,JSON.stringify(records));}catch(e){} }
+function showLocalCache(){
+  try{const saved=localStorage.getItem(CACHE);if(saved){const d=JSON.parse(saved);if(Array.isArray(d)){records=d;return;}}}catch(e){}
+  records=JSON.parse(JSON.stringify(SEED));
+}
+async function refreshFromFile(){
+  if(!fileHandle || !(await havePermission('readwrite')))return false;
+  const snap=await readFileSnapshot();
+  records=snap.data;
+  loadedSignature=snap.signature;
+  fileState='linked'; backupCache(); render(); updateLinkUI(); setSync('loaded');
+  return true;
 }
 async function load(){
-  try{ const h=await idbGet(IDB_KEY); if(h) fileHandle=h; }catch(e){}
-  if(fileHandle){
-    if(await havePermission('readwrite')){
-      const d=await readFile();
-      if(Array.isArray(d)){ records=d; fileState='linked'; return; }
+  try{const h=await idbGet(IDB_KEY);if(h)fileHandle=h;}catch(e){}
+  if(fileHandle && await havePermission('readwrite')){
+    try{await refreshFromFile();return;}catch(e){console.error('OneDrive-Datei nicht lesbar:',e);}
+  }
+  fileState=fileHandle?'needsPermission':'unlinked';
+  loadedSignature=null;
+  showLocalCache();
+  setSync('offline','Die angezeigten Daten sind nur eine lokale Kopie.');
+}
+async function save(){
+  if(saving){alert('Ein Speichervorgang läuft bereits.');return false;}
+  if(fileState!=='linked'||!fileHandle){
+    setSync('err','Keine schreibbare OneDrive-Datei verknüpft.');
+    alert('Nicht gespeichert! Bitte zuerst die OneDrive-Datei verknüpfen bzw. den Zugriff erlauben.');
+    return false;
+  }
+  saving=true;setSync('busy');
+  try{
+    if(!(await havePermission('readwrite')))throw new Error('Schreibberechtigung fehlt.');
+    // Vor jedem Speichern auf zwischenzeitliche Änderungen prüfen.
+    const current=await readFileSnapshot();
+    if(current.signature!==loadedSignature){
+      throw new Error('Die JSON-Datei wurde seit dem Laden verändert (z. B. am zweiten Rechner). Bitte Seite neu laden, um Überschreiben zu vermeiden.');
     }
-    fileState='needsPermission';
-  } else fileState='unlinked';
-  try{ const c=localStorage.getItem(CACHE); if(c){ const p=JSON.parse(c); if(Array.isArray(p)) records=p; } }catch(e){}
-  if(!records.length) records=JSON.parse(JSON.stringify(SEED));
+    const json=JSON.stringify(records,null,2);
+    const w=await fileHandle.createWritable();
+    try{await w.write(json);await w.close();}catch(e){try{await w.abort();}catch(_){}throw e;}
+    // OneDrive braucht ggf. zusätzliche Zeit für die Cloud-Übertragung.
+    loadedSignature=json;
+    backupCache();setSync('ok');
+    return true;
+  }catch(e){
+    console.error('Speichern fehlgeschlagen:',e);
+    setSync('err',e.message);
+    alert('ACHTUNG: Änderung NICHT gespeichert!\n\n'+e.message+'\n\nBitte vor weiteren Änderungen die Datei/OneDrive-Synchronisierung prüfen.');
+    return false;
+  }finally{saving=false;}
 }
 async function linkFile(){
-  if(!window.showOpenFilePicker){ alert('Dein Browser unterstützt das Verknüpfen nicht. Bitte Microsoft Edge oder Google Chrome verwenden.'); return; }
+  if(!window.showOpenFilePicker){alert('Bitte Chrome oder Edge verwenden.');return;}
   try{
-    const [h]=await window.showOpenFilePicker({multiple:false, types:[{description:'Verrechnungskonto-Daten', accept:{'application/json':['.json']}}]});
+    const [h]=await window.showOpenFilePicker({multiple:false,types:[{description:'Verrechnungskonto-Daten',accept:{'application/json':['.json']}}]});
+    if(!h)return;
     fileHandle=h;
-    if(!(await askPermission('readwrite'))){ alert('Ohne Schreibzugriff kann nicht gespeichert werden.'); return; }
+    if(!(await askPermission('readwrite'))){fileState='needsPermission';updateLinkUI();return;}
+    const snap=await readFileSnapshot(); // Bestehende Datei niemals ungefragt überschreiben.
     await idbSet(IDB_KEY,h);
-    const d=await readFile();
-    if(Array.isArray(d) && d.length){ records=d; }
-    else { if(!records.length) records=JSON.parse(JSON.stringify(SEED)); await save2file(); }
-    fileState='linked'; updateLinkUI(); render();
-    showToast('Datei verknüpft · Änderungen werden ab jetzt automatisch gespeichert.');
-  }catch(e){ /* abgebrochen */ }
+    records=snap.data;loadedSignature=snap.signature;fileState='linked';
+    backupCache();render();updateLinkUI();setSync('loaded');
+    showToast('OneDrive-Datei verknüpft und vollständig neu geladen.');
+  }catch(e){if(e.name==='AbortError')return;fileState='needsPermission';updateLinkUI();alert('Datei konnte nicht geladen werden: '+e.message);}
 }
-async function save2file(){ try{ const w=await fileHandle.createWritable(); await w.write(JSON.stringify(records,null,2)); await w.close(); setSync('ok'); }catch(e){ setSync('err'); } }
 async function grantPermission(){
-  if(!fileHandle) return;
-  if(await askPermission('readwrite')){
-    const d=await readFile(); if(Array.isArray(d)) records=d;
-    fileState='linked'; updateLinkUI(); render();
-    showToast('Zugriff erlaubt · aktuelle Daten geladen.');
-  } else { alert('Zugriff wurde nicht erteilt.'); }
-}
-function setSync(state){
-  const el=document.getElementById('syncDot'); if(!el) return;
-  if(state==='ok'){ el.textContent='✓ gespeichert'; el.className='sync ok'; }
-  else { el.textContent='⚠ nicht gespeichert'; el.className='sync err'; }
+  if(!fileHandle)return;
+  if(!(await askPermission('readwrite'))){alert('Zugriff wurde nicht erteilt.');return;}
+  try{await refreshFromFile();showToast('Aktuelle OneDrive-Daten geladen.');}
+  catch(e){fileState='needsPermission';updateLinkUI();alert('OneDrive-Datei kann nicht gelesen werden: '+e.message);}
 }
 function updateLinkUI(){
-  const bar=document.getElementById('linkbar'); if(!bar) return;
-  if(fileState==='linked'){ bar.style.display='none'; setSync('ok'); return; }
+  const bar=document.getElementById('linkbar');if(!bar)return;
+  if(fileState==='linked'){bar.style.display='none';return;}
   bar.style.display='block';
   if(fileState==='needsPermission'){
-    bar.innerHTML='<b>Fast fertig:</b> Zugriff auf deine Daten-Datei bestätigen, dann läuft alles automatisch. <button class="linkbtn" onclick="grantPermission()">Zugriff erlauben</button>';
-  } else {
-    bar.innerHTML='<b>Noch nicht verbunden.</b> Verknüpfe einmalig deine Daten-Datei <span class="mono">verrechnungskonto-daten.json</span> im OneDrive-Ordner. <button class="linkbtn" onclick="linkFile()">Daten-Datei verknüpfen</button>';
+    bar.innerHTML='<b>OneDrive nicht verfügbar:</b> Die angezeigten Buchungen sind nur eine lokale Kopie. Vor dem Bearbeiten zuerst den Zugriff herstellen. <button class="linkbtn" onclick="grantPermission()">Dateizugriff erlauben / neu laden</button> <button class="linkbtn" onclick="linkFile()">Andere JSON-Datei auswählen</button>';
+  }else{
+    bar.innerHTML='<b>Keine Datendatei verbunden:</b> Bitte die richtige <span class="mono">verrechnungskonto-daten.json</span> im synchronisierten OneDrive-Ordner auswählen. <button class="linkbtn" onclick="linkFile()">OneDrive-Datei verknüpfen</button>';
   }
+  setSync('offline');
 }
 
 function offenSaldo(p){ return records.filter(r=>r.beteiligter===p && isOffen(r)).reduce((s,r)=>s+signed(r),0); }
@@ -510,6 +546,7 @@ function setF(key,val){ F[key]=val; renderFilters(); renderList(); }
 function resetFilters(){ Object.assign(F,FDEF); document.getElementById('search').value=''; setStatus('offen'); renderFilters(); renderList(); }
 
 function abrechnen(id){
+  if(fileState!=='linked'){alert('Bitte zuerst die OneDrive-Datei verbinden.');return;}
   const r=records.find(x=>x.id===id); if(!r||!isOffen(r)) return;
   pendingId=id;
   const v=verrechnet(r), von=r.richtung==='von_mkd';
@@ -536,13 +573,14 @@ async function doAbrechnen(){
   const r=records.find(x=>x.id===pendingId);
   document.getElementById('confirmOverlay').classList.remove('show');
   if(!r||!isOffen(r)){ pendingId=null; return; }
+  const oldAbger=r.abger;
   r.abger=new Date().toISOString().slice(0,10); pendingId=null;
-  await save(); render();
+  if(!(await save())){r.abger=oldAbger;render();return;} render();
   showToast('Beleg '+(r.rgnr||'—')+' ('+(r.lieferant||'')+') ist als erledigt gebucht.', r.id);
 }
 async function reopenRow(id){
   const r=records.find(x=>x.id===id); if(!r) return;
-  r.abger=null; await save(); render();
+  const oldAbger=r.abger; r.abger=null; if(!(await save())){r.abger=oldAbger;render();return;} render();
   showToast('Beleg '+(r.rgnr||'—')+' ist wieder offen.');
 }
 function showToast(text, undoId){
@@ -553,7 +591,7 @@ function showToast(text, undoId){
   if(undoId){ t.querySelector('.undo').onclick=()=>{ t.remove(); reopenRow(undoId); }; }
   setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 5200);
 }
-async function del(id){ const r=records.find(x=>x.id===id); if(r && confirm('Rechnung '+(r.lieferant||'')+' '+(r.rgnr||'')+' wirklich löschen?')){ records=records.filter(x=>x.id!==id); await save(); render(); } }
+async function del(id){ const r=records.find(x=>x.id===id); if(r && confirm('Rechnung '+(r.lieferant||'')+' '+(r.rgnr||'')+' wirklich löschen?')){ const old=records; records=records.filter(x=>x.id!==id); if(!(await save()))records=old; render(); } }
 
 function dl(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1500); }
 function exportCSV(){
@@ -565,6 +603,7 @@ function exportCSV(){
 function exportJSON(){ dl(new Blob([JSON.stringify(records,null,2)],{type:'application/json'}), 'verrechnungskonto_sicherung_'+new Date().toISOString().slice(0,10)+'.json'); }
 
 function openForm(rec){
+  if(fileState!=='linked'){alert('Bitte zuerst die OneDrive-Datei verbinden. Es werden keine Änderungen in einer lokalen Kopie zugelassen.');return;}
   document.getElementById('form').reset();
   document.getElementById('fId').value = rec?rec.id:'';
   document.getElementById('formTitle').textContent = rec?'Rechnung bearbeiten':'Rechnung erfassen';
@@ -606,9 +645,10 @@ async function saveRecord(ev){
   const items = abzuege.filter(a=>(+a.betrag||0)>0).map(a=>({bez:(a.bez||'').trim(), betrag:+a.betrag||0}));
   const eigenTotal = items.reduce((s,a)=>s+a.betrag,0);
   const data={ datum:document.getElementById('fDatum').value, rgnr:document.getElementById('fRg').value.trim(), lieferant:document.getElementById('fLief').value.trim(), beteiligter:document.getElementById('fWer').value, richtung:dir, netto:+document.getElementById('fNetto').value||0, eigen:eigenTotal, eigenItems:(items.length?items:null), abger:document.getElementById('fAbger').value||null };
-  if(id){ Object.assign(records.find(r=>r.id===id), data); }
+  const old=JSON.parse(JSON.stringify(records));
+  if(id){ const existing=records.find(r=>r.id===id); if(!existing){alert('Buchung nicht mehr vorhanden.');return;} Object.assign(existing,data); }
   else { data.id='r'+Date.now()+Math.random().toString(36).slice(2,6); records.push(data); }
-  await save(); closeForm(); render();
+  if(!(await save())){records=old;render();return;} closeForm(); render();
 }
 
 (async()=>{ await load(); render(); updateLinkUI(); })();
